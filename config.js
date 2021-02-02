@@ -4,9 +4,9 @@ var config = module.exports = {
             ping: 60,//心跳周期（秒）
             ping_timeout: 3,//最大心跳超时次数
             expires: 3600,//注册有效期（秒）
-            host: '192.168.3.5',//SIP服务器通讯IP地址,如果使用内网映射到公网IP需要设置为公网IP地址
+            host: '192.168.12.40',//SIP服务器通讯IP地址,如果使用内网映射到公网IP需要设置为公网IP地址
             serial: '34020000002000000001',//SIP服务器编号
-            listen: 5061,//SIP通信端口
+            listen: 5060,//SIP通信端口
             realm: '3402000000',//SIP服务器域
             password: '12345678',//默认密码
             ack_timeout: 30,//服务端发送ack后，接收回应的超时时间，单位为秒,如果指定时间没有回应，认为失败
@@ -20,7 +20,23 @@ var config = module.exports = {
             rtp_max_port: 11200,//rtp接收监听端口范围，最大值           
             invite_port_fixed: true,//设备将流发送的端口，是否固定,true:发送流到多路复用端口 如9200,false:动从rtp_mix_port - rtp_max_port 之间的值中选一个可以用的端口
             host: '0.0.0.0',//本地地址
-            rtmpServer: 'rtmp://127.0.0.1/live'//RTMP服务器基地址
+            rtmpServer: 'rtmp://127.0.0.1:1935/live'//RTMP服务器基地址
+        },
+        mediaServer: {
+            enable:true,
+            opt:{
+                rtmp: {
+                  port: 1935,
+                  chunk_size: 60000,
+                  gop_cache: true,
+                  ping: 30,
+                  ping_timeout: 60
+                },
+                http: {
+                  port: 8000,
+                  allow_origin: '*'
+                }
+              }
         }
     },
     VAG: {

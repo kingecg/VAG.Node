@@ -734,7 +734,7 @@ class NodeSipSession {
             //0: udp,1:tcp/passive ,2:tcp/active
             let selectMode = mode || 0;
 
-            let ssrc = "0" + channelId.substring(16, 20) + channelId.substring(3, 8);
+            let ssrc = "0" + channelId.substring(3, 8) + channelId.substring(16, 20);
 
             let host = rhost || "127.0.0.1";
 
@@ -769,7 +769,9 @@ class NodeSipSession {
                 `a=recvonly\r\n` +
                 sdpV +
                 `y=${ssrc}\r\n` +
-                `f=v/2/4///a///\r\n`;
+                `f=v/2/4/8/2//a///\r\n`;
+                // `f=\r\n`
+                //
 
 
             let that = this;
@@ -836,7 +838,8 @@ class NodeSipSession {
                                                 to: response.headers.to,
                                                 from: response.headers.from,
                                                 'call-id': response.headers['call-id'],
-                                                cseq: { method: 'BYE', seq: response.headers.cseq.seq++ }//需额外加1
+                                                cseq: { method: 'BYE', seq: response.headers.cseq.seq+3 },//需额外加1
+                                                contact: [{ uri: 'sip:' + that.GBServerId + '@' + that.GBserverHost + ':' + that.GBServerPort }]
                                             }
                                         }
 
@@ -857,10 +860,33 @@ class NodeSipSession {
         });
     }
 
+    _sendBye(session){
+        const that = this
+        const bye = SIP.copyMessage(session.bye,true)
+        return new Promise((resolve,reject)=>{
+            that.uas.send(bye,(response)=>{
+                if(response.status!=='200'){
+                    resolve(false)
+                } else {
+                    resolve(true)
+                }
+            })
+        })
+    }
+    async retry(fn,count=1){
+        let lret = false
+        for(let i=0;i<count;i++){
+            lret = await fn()
+            if(lret){
+                break
+            }
+        }
+        return lret
+    }
     //停止实时预览
     async sendStopRealPlayMessage(channelId, rhost, rport) {
-
-        return new Promise((resolve, reject) => {
+        const that = this
+        return new Promise(async (resolve, reject) => {
             let result = { result: false, message: 'not find dialog.' };
 
             for (var key in this.dialogs) {
@@ -868,16 +894,23 @@ class NodeSipSession {
                 let session = this.dialogs[key];
 
                 if (session.bye && session.port === rport && session.host === rhost && session.channelId === channelId && session.play === 'realplay') {
+                    let fn = function(){
+                        return that._sendBye(session)
+                    }
+                    const ret = await this.retry(fn,3)
+                    if(ret){
+                        context.nodeEvent.emit('stopPlayed', session.ssrc);
 
-                    context.nodeEvent.emit('stopPlayed', session.ssrc);
-
-                    this.uas.send(session.bye, (response) => {
-                        Logger.log(`[${this.id}] StopRealPlay status=${response.status}`);
-                        delete this.dialogs[key];
-                    });
-
-                    result.result = true;
-                    result.message = 'OK';
+                        this.uas.send(session.bye, (response) => {
+                            Logger.log(`[${this.id}] StopRealPlay status=${response.status}`);
+                            delete this.dialogs[key];
+                        });
+                        result.result = true;
+                        result.message = 'OK';
+                    } else {
+                        result.result = false
+                        result.message = 'Disconnect rtp fail, please retry'
+                    }
                 }
             }
 

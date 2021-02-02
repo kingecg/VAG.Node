@@ -1,6 +1,7 @@
 const NodeAPIServer = require('./api/server');
 const NodeGB28181Server = require('./GB28181Server');
 const NodeStreamServer = require('./stream/server');
+const MediaServer = require('./media')
 const config = require('./config');
 
 //信令服务
@@ -15,4 +16,8 @@ vagAPIService.run();
 if (config.GB28181.streamServer.enable) {
     let vagStreamService = new NodeStreamServer(config);
     vagStreamService.run();
+}
+
+if(config.GB28181.mediaServer.enable){
+    MediaServer.start(config.GB28181.mediaServer.opt)
 }
