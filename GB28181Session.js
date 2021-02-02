@@ -578,7 +578,8 @@ class NodeSipSession {
                                                 to: response.headers.to,
                                                 from: response.headers.from,
                                                 'call-id': response.headers['call-id'],
-                                                cseq: { method: 'BYE', seq: response.headers.cseq.seq++ }//需额外加1
+                                                cseq: { method: 'BYE', seq: response.headers.cseq.seq++ },//需额外加1
+                                                contact: [{ uri: 'sip:' + that.GBServerId + '@' + that.GBserverHost + ':' + that.GBServerPort }]
                                             }
                                         }
 
